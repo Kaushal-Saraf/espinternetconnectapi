@@ -1,6 +1,9 @@
 const { Schema, default: mongoose } = require("mongoose");
 
 const dataSchema=new Schema({
+    id:{
+        type:String,
+    },
     userData:{
         type:JSON,
     },
