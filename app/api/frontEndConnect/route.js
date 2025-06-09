@@ -7,7 +7,7 @@ export async function POST(req) {
     await connectDb();
 
     const newuserdata = await req.json();
-
+    console.log(newuserdata);
     if (!newuserdata.id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
