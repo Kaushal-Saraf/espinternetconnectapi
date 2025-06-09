@@ -1,24 +1,39 @@
 import { connectDb } from "@/helper/db";
-import { data, data } from "@/models/data";
+import { data } from "@/models/data";
+import { NextResponse } from "next/server";
 
 export async function POST(req) {
-
+  try {
     await connectDb();
-    const { id } = await req.json();
 
-    if (!id) {
+    const newespdata = await req.json();
+
+    if (!newespdata.id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    const espData = await data.findOne({ id: id });
+    // Find the document with the given id
+    const currData = await data.findOne({ id: newespdata.id });
 
-    if (!espData) {
-      return Response.json({ message: 'ID not found' }, { status: 404 });
+    if (!currData) {
+      return NextResponse.json({ message: 'ID not found' }, { status: 404 });
     }
 
-    if (espData.userData) {
-      return Response.json({ userData: espData.userData }, { status: 200 });
+    // Update userData with espData (if provided)
+    if (newespdata.data) {
+      currData.espData = newespdata.data;
+      await currData.save();
+    }
+
+    // Respond with current userData
+    if (currData.userData) {
+      return NextResponse.json({ userData: currData.userData }, { status: 200 });
     } else {
-      return Response.json({ message: 'no data' }, { status: 200 });
+      return NextResponse.json({ message: 'No Data Sent from the User.' }, { status: 200 });
     }
+
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
 }
