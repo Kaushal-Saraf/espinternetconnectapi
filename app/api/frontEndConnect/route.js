@@ -1,75 +1,39 @@
 import { connectDb } from "@/helper/db";
 import { data } from "@/models/data";
+import { NextResponse } from "next/server";
 
-export async function POST(req, { params }) {
+export async function POST(req) {
+  try {
+    await connectDb();
 
-  await connectDb();
-//data
-//   const machinedata = await machine.findOne({ umid: params.machineid });
+    const newuserdata = await req.json();
 
-//   const prescriptionDetails = await prescription.findOne({ _id: params.id });
-//   if (prescriptionDetails.status) {
-//     return NextResponse.json(
-//       { message: "Medicines alreday bought" },
-//       { status: 403 }
-//     );
-//   }
+    if (!newuserdata.id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
 
-//   const compare = prescriptionDetails.medicines.every((med1) =>
-//     machinedata.medicinedetails.some(
-//       (med2) =>
-//         med2.name === med1.name &&
-//         med2.cpsuleeachpack * med2.notsold >=
-//           med1.timeperiod * med1.dailyfrequency
-//     )
-//   );
+    // Find the document with the given id
+    const currData = await data.findOne({ id: newuserdata.id });
 
-//   if (!compare) {
-//     return NextResponse.json(
-//       { message: "Medicne not available in the machine" },
-//       { status: 403 }
-//     );
-//   }
+    if (!currData) {
+      return NextResponse.json({ message: 'ID not found enter correct id.' }, { status: 404 });
+    }
 
-//   // only for unique elements in array
-//   const reqarray = prescriptionDetails.medicines.map((medicine) => {
-//     const matchedMedicine = machinedata.medicinedetails.find(
-//       (machinemedicine) => {
-//         return machinemedicine.name === medicine.name;
-//       }
-//     );
-//     return Number(matchedMedicine.slot);
-//   });
-//   reqarray.forEach((slot) => {
-//     const matchedMedicine = machinedata.medicinedetails.find(
-//       (medicine) => medicine.slot == slot
-//     );
-//     if (matchedMedicine) {
-//       matchedMedicine.notsold--;
-//       matchedMedicine.soldandnotcollected++;
-//     }
-//   });
-//   reqarray.sort((a, b) => a - b);
-//   const qrarray = reqarray.map((value) => [value, 1]).flat();
-//   const d = new Date();
-//   const newqr = {
-//     uid: String(prescriptionDetails.aadharnumber) + String(d.getTime()),
-//     aadhar: prescriptionDetails.aadharnumber,
-//     umid: params.machineid,
-//     medicinedata: qrarray,
-//     used: false,
-//   };
+    // Update userData with espData (if provided)
+    if (newuserdata.data) {
+      currData.userData = newuserdata.data;
+      await currData.save();
+    }
 
-//   await prescription.updateOne({ _id: params.id }, { status: true });
+    // Respond with current userData
+    if (currData.espData) {
+      return NextResponse.json({ espData: currData.espData }, { status: 200 });
+    } else {
+      return NextResponse.json({ message: 'No Data Sent from the Esp.' }, { status: 200 });
+    }
 
-//   await qr.create(newqr);
-
-//   await machine.updateOne(
-//     { umid: params.machineid },
-//     { medicinedetails: machinedata.medicinedetails }
-//   );
-//   const patientid = await patient.findOne({
-//     aadharnumber: prescriptionDetails.aadharnumber,
-//   });
-  return Response.json({message: "Hello"});
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
 }
